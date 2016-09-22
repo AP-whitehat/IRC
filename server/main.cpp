@@ -19,6 +19,7 @@
 using namespace std;
 
 int servecli(int newsockfd);
+int parse(char buffer[],int n);
 
 void error(const char *msg)
 {
@@ -84,5 +85,15 @@ int main(int argc, char *argv[])
 
 int servercli(int newsockfd)
 {
-    
+    int n,flag=1;
+    char buffer[256];
+    while(flag)
+    {
+        n=read(newsockfd,buffer,255);
+        if(n>=0)
+            flag=parse(buffer,n);
+        else
+            error("ERROR reading from socket");
+    }
+    return 0;
 }
