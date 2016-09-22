@@ -18,6 +18,8 @@
 
 using namespace std;
 
+int servecli(int newsockfd);
+
 void error(const char *msg)
 {
     perror(msg);
@@ -28,9 +30,9 @@ int main(int argc, char *argv[])
 {
     int sockfd, newsockfd, portno;
     socklen_t clilen;
-    char buffer[256];
+    //char buffer[256];
     sockaddr_in serv_addr, cli_addr;
-    long n;
+    //long n;
     if (argc < 2) {
         cerr<<"ERROR, no port provided\n";
         exit(1);
@@ -47,7 +49,23 @@ int main(int argc, char *argv[])
      //   error("ERROR on binding");
     listen(sockfd,5);
     clilen = sizeof(cli_addr);
-    newsockfd = accept(sockfd,
+    while(1)
+    {
+        newsockfd=accept(sockfd,(sockaddr*) &cli_addr,&clilen);
+        if(newsockfd<0)
+            error("ERROR on accept");
+        if(!fork())                         //fork a child process to accept multiple connections
+        {
+            close(sockfd);
+            servecli(newsockfd);            //function that serves the client
+            exit(0);
+        }
+        else
+            error("ERROR on fork()");
+        close(newsockfd);
+    }
+    /*
+     newsockfd = accept(sockfd,
                        (sockaddr *) &cli_addr,
                        &clilen);
     if (newsockfd < 0)
@@ -59,7 +77,12 @@ int main(int argc, char *argv[])
     n = write(newsockfd,"I got your message",18);
     if (n < 0) error("ERROR writing to socket");
     close(newsockfd);
+     */
     close(sockfd);
     return 0;
 }
 
+int servercli(int newsockfd)
+{
+    
+}
