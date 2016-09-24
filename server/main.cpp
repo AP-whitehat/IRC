@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
         if(!fork())                         //fork a child process to accept multiple connections
         {
             close(sockfd);
-            servecli(newsockfd);            //function that serves the client
+            servecli(newsockfd);            //function that serves the client until termination
             exit(0);
         }
         else
@@ -91,9 +91,15 @@ int servercli(int newsockfd)
     {
         n=read(newsockfd,buffer,255);
         if(n>=0)
-            flag=parse(buffer,n);
+            flag=parse(buffer,n);                              //parses the msg and decides what to do
         else
             error("ERROR reading from socket");
+        if(flag) work(flag,buffer);
     }
     return 0;
+}
+
+int parse(char buffer[],int n)
+{
+    
 }

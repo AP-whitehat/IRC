@@ -6,15 +6,20 @@
 //  Copyright © 2016 Anant Prakash. All rights reserved.
 //
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <iostream>
+#include <cstdlib>
 #include <unistd.h>
-#include <string.h>
+#include <cstring>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <netdb.h>
+#include <cnetdb>
 
+using namespace std;
+
+char comds[][10]={"/quit","/msg","/join","/nick"}    //commands supported
+
+int parse(char);
 void error(const char *msg)
 {
     perror(msg);
@@ -24,13 +29,13 @@ void error(const char *msg)
 int main(int argc, char *argv[])
 {
     int sockfd, portno;
-    long n;
+    //int n;
+    char buffer[256];
     struct sockaddr_in serv_addr;
     struct hostent *server;
     
-    char buffer[256];
     if (argc < 3) {
-        fprintf(stderr,"usage %s hostname port\n", argv[0]);
+        cerr<<"usage "<<argv[0]<<" hostname port\n";
         exit(0);
     }
     portno = atoi(argv[2]);
@@ -39,7 +44,7 @@ int main(int argc, char *argv[])
         error("ERROR opening socket");
     server = gethostbyname(argv[1]);
     if (server == NULL) {
-        fprintf(stderr,"ERROR, no such host\n");
+        cerr<<"ERROR, no such host\n";
         exit(0);
     }
     bzero((char *) &serv_addr, sizeof(serv_addr));
@@ -50,17 +55,32 @@ int main(int argc, char *argv[])
     serv_addr.sin_port = htons(portno);
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
         error("ERROR connecting");
-    printf("Please enter the message: ");
-    bzero(buffer,256);
-    fgets(buffer,255,stdin);
-    n = write(sockfd,buffer,strlen(buffer));
-    if (n < 0)
-        error("ERROR writing to socket");
-    bzero(buffer,256);
-    n = read(sockfd,buffer,255);
-    if (n < 0)
-        error("ERROR reading from socket");
-    printf("%s\n",buffer);
+    int flag=1;                                                 //signals termination
+    while(flag)
+    {
+        cout<<"Connected with server\n";
+        bzero(buffer,256);
+        fgets(buffer,255,stdin);                                 //fgets prevents overflow
+        flag=parse(buffer);                                     //parses the msg and decides what to do
+        
+        /*
+        n = write(sockfd,buffer,strlen(buffer));
+        if (n < 0)
+            error("ERROR writing to socket");
+        bzero(buffer,256);
+        n = read(sockfd,buffer,255);
+        if (n < 0)
+            error("ERROR reading from socket");
+        printf("%s\n",buffer);
+         */
+    }
+    
     close(sockfd);
     return 0;
+}
+
+int parse(char buffer[])
+{
+    int flag=0;
+    
 }
