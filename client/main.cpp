@@ -13,13 +13,13 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <cnetdb>
+#include <netdb.h>
 
 using namespace std;
 
-char comds[][10]={"/quit","/msg","/join","/nick"}    //commands supported
+char comds[][10]={"/quit","/msg","/join","/nick"} ;   //commands supported
 
-int parse(char);
+int parse(char buffer[]);
 void error(const char *msg)
 {
     perror(msg);
