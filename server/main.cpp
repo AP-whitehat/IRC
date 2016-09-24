@@ -55,7 +55,8 @@ int main(int argc, char *argv[])
         newsockfd=accept(sockfd,(sockaddr*) &cli_addr,&clilen);
         if(newsockfd<0)
             error("ERROR on accept");
-        if(!fork())                         //fork a child process to accept multiple connections
+        //add pid
+        if(fork())                         //fork a child process to accept multiple connections
         {
             close(sockfd);
             servecli(newsockfd);            //function that serves the client until termination
