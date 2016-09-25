@@ -6,7 +6,7 @@
 //
 //
 
-/* A simple server in the internet domain using TCP
+/* IRC server using TCP & fork .
  The port number is passed as an argument */
 #include <iostream>
 #include <cstdlib>
@@ -18,8 +18,9 @@
 
 using namespace std;
 
-int servecli(int newsockfd);
-int parse(char buffer[],int n);
+char comds[][10]={"/quit","/msg","/receive","/join","/nick"}; 
+int servecli(int newsockfd,int c);
+int parse(char buffer[]);
 
 void error(const char *msg)
 {
@@ -27,9 +28,15 @@ void error(const char *msg)
     exit(1);
 }
 
+struct data
+{
+    char a[256],name[100];
+    
+};
+
 int main(int argc, char *argv[])
 {
-    int sockfd, newsockfd, portno;
+    int sockfd, newsockfd, portno,pid;
     socklen_t clilen;
     //char buffer[256];
     sockaddr_in serv_addr, cli_addr;
@@ -50,20 +57,23 @@ int main(int argc, char *argv[])
      //   error("ERROR on binding");
     listen(sockfd,5);
     clilen = sizeof(cli_addr);
-    while(1)
+    int c=0;                        //keeps track of clients
+    while(c<2)
     {
-        newsockfd=accept(sockfd,(sockaddr*) &cli_addr,&clilen);
+        newsockfd = accept(sockfd,(sockaddr *) &cli_addr,&clilen);
         if(newsockfd<0)
             error("ERROR on accept");
-        //add pid
-        if(fork())                         //fork a child process to accept multiple connections
+        pid = fork();                                   //fork a child process to accept multiple connections
+        if(pid<0)
+            error("ERROR on fork()");
+        if(pid==0)                         
         {
             close(sockfd);
-            servecli(newsockfd);            //function that serves the client until termination
+            c=c+servecli(newsockfd,c);            //function that serves the client until termination returns 1 when successful
+                                                  //c determines whether to write or read
             exit(0);
         }
         else
-            error("ERROR on fork()");
         close(newsockfd);
     }
     /*
@@ -84,23 +94,54 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int servercli(int newsockfd)
+int servecli(int newsockfd,int c)
 {
+    static data x;
     int n,flag=1;
     char buffer[256];
-    while(flag)
+    if(c==0)                                    //read from 1st client
     {
-        n=read(newsockfd,buffer,255);
-        if(n>=0)
-            flag=parse(buffer,n);                              //parses the msg and decides what to do
-        else
-            error("ERROR reading from socket");
-        if(flag) work(flag,buffer);
+//        while(flag)
+//        {
+            bzero(buffer,256);
+            n=read(newsockfd,buffer,255);
+            if(n>=0)
+                flag=parse(buffer);                              //parses the msg and decides what to do
+            else
+                error("ERROR reading from socket");
+            if(flag)
+            {
+                bzero(x.name,sizeof(x.name));
+                n=read(newsockfd,x.name,sizeof(x.name));
+                if (n < 0) error("ERROR reading from socket");
+                bzero(x.a,sizeof(x.a));
+                n=read(newsockfd,x.a,sizeof(x.a));
+                if (n < 0) error("ERROR reading from socket");
+                close(newsockfd);
+                return 1;
+            }
+            else
+                close(newsockfd);
+//        }
     }
+    else if (c==1)                                              //writes the msg to second client
+    {
+        n=write(newsockfd,x.name,sizeof(x.name));
+        if (n < 0) error("ERROR writing to socket");
+        n=write(newsockfd,x.a,sizeof(x.a));
+        if (n < 0) error("ERROR writing to socket");
+        close(newsockfd);
+        return 1;
+    }
+    error("Client limit exceeded");                             //control shouldn't reach here
+    exit(1);
     return 0;
 }
 
-int parse(char buffer[],int n)
+int parse(char buffer[])                                  //only /msg supported , WIP
 {
-    
+    int flag=0;
+    if(!strcmp(buffer,"/msg"))
+        flag=1;
+    return flag;
 }
