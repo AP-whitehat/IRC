@@ -15,10 +15,11 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <fstream>
 
 using namespace std;
 
-char comds[][10]={"/quit","/msg","/receive","/join","/nick"}; 
+char comds[][10]={"/quit","/msg","/recieve","/join","/nick"}; 
 int servecli(int newsockfd,int c);
 int parse(char buffer[]);
 
@@ -32,10 +33,14 @@ struct data
 {
     char a[256],name[100];
     
-};
+}x;
 
 int main(int argc, char *argv[])
 {
+    /*
+     ifstream fin ("beads.in");
+     ofstream fout ("beads.out");
+     */
     int sockfd, newsockfd, portno,pid;
     socklen_t clilen;
     //char buffer[256];
@@ -96,36 +101,41 @@ int main(int argc, char *argv[])
 
 int servecli(int newsockfd,int c)
 {
-    static data x;
     int n,flag=1;
     char buffer[256];
-    if(c==0)                                    //read from 1st client
+    bzero(buffer,256);
+    n=read(newsockfd,buffer,255);
+    if(n>=0)
+        flag=parse(buffer);                              //parses the msg and decides what to do
+    else
+        error("ERROR reading from socket");
+    if(flag==1)                                    //read from 1st client
     {
 //        while(flag)
 //        {
-            bzero(buffer,256);
-            n=read(newsockfd,buffer,255);
-            if(n>=0)
-                flag=parse(buffer);                              //parses the msg and decides what to do
-            else
-                error("ERROR reading from socket");
-            if(flag)
-            {
+        ofstream fout ("msg.dat",ios::binary|ios::out);
                 bzero(x.name,sizeof(x.name));
                 n=read(newsockfd,x.name,sizeof(x.name));
                 if (n < 0) error("ERROR reading from socket");
+        bzero(x.name,sizeof(x.name));
+        n=read(newsockfd,x.name,sizeof(x.name));
+        if (n < 0) error("ERROR reading from socket");
                 bzero(x.a,sizeof(x.a));
                 n=read(newsockfd,x.a,sizeof(x.a));
                 if (n < 0) error("ERROR reading from socket");
+//        cerr<<"name :"<<x.name<<endl;
+//        cerr<<"message :"<<x.a;
                 close(newsockfd);
+        fout.write((char*)&x,sizeof(x));
+        fout.close();
                 return 1;
-            }
-            else
-                close(newsockfd);
 //        }
     }
-    else if (c==1)                                              //writes the msg to second client
+    else if (flag==2)                                              //writes the msg to second client
     {
+        ifstream fin ("msg.dat",ios::binary|ios::in);
+        fin.read((char*)&x,sizeof(x));
+        fin.close();
         n=write(newsockfd,x.name,sizeof(x.name));
         if (n < 0) error("ERROR writing to socket");
         n=write(newsockfd,x.a,sizeof(x.a));
@@ -138,10 +148,16 @@ int servecli(int newsockfd,int c)
     return 0;
 }
 
-int parse(char buffer[])                                  //only /msg supported , WIP
+int parse(char buffer[])
 {
     int flag=0;
-    if(!strcmp(buffer,"/msg"))
-        flag=1;
+    for(int i=0;i<3 ;i++)
+    {
+        if (!strcmp(buffer,comds[i]))
+        {   flag=i;
+            break;
+        }
+    }
     return flag;
 }
+

@@ -17,7 +17,7 @@
 
 using namespace std;
 
-char comds[][10]={"/quit","/msg","/receive","/join","/nick"};   //commands supported , WIP
+char comds[][10]={"/quit","/msg","/recieve","/join","/nick"};   //commands supported , WIP
 struct data
 {
     char a[256],name[100];
@@ -63,19 +63,25 @@ int main(int argc, char *argv[])
     int flag=1;                                                 //signals termination if 0
     data x;
     cout<<"enter your nickname:";
-    cin>>x.name;
+    fgets(x.name,sizeof(x.name),stdin);
     while(flag)
     {   int n;
         cout<<"Connected with server\n";
         bzero(buffer,256);
         cout<<"enter command:";
-        fgets(buffer,255,stdin);                                 //fgets prevents overflow
+//        fgets(buffer,255,stdin);                                 //fgets prevents overflow
+        cin>>buffer;
         flag=parse(buffer);                                     //parses the msg and decides what to do
         switch(flag)
         {
             case 1:
+                n = write(sockfd,buffer,sizeof(buffer));        //sends the command to server "/msg"
+                if (n < 0)
+                    error("ERROR writing to socket");
                 cout<<"enter your message :";
-                cin>>*(x.a);
+                cin.ignore();
+                fgets(x.a,255,stdin);
+//                cerr<<"name :"<<x.name<<endl<<"msg:"<<x.a<<endl;
                 n = write(sockfd,x.name,sizeof(x.name));
                 if (n < 0)
                     error("ERROR writing to socket");
@@ -84,6 +90,8 @@ int main(int argc, char *argv[])
                     error("ERROR writing to socket");
                 break;
             case 2:
+                n = write(sockfd,buffer,sizeof(buffer));        //sends the command to server "/recieve"
+                if (n < 0)
                 bzero(x.name,sizeof(x.name));
                 n = read(sockfd,x.name,sizeof(x.name));
                 if (n < 0)
@@ -92,7 +100,8 @@ int main(int argc, char *argv[])
                 n = read(sockfd,x.a,sizeof(x.a));
                 if (n < 0)
                     error("ERROR reading from socket");
-                cout<<"messege from "<<x.name<<": "<<(x.a)<<"\n";
+                cout<<"message from "<<x.name;
+                fputs(x.a,stdout);
                 break;
         }
         flag=0;
@@ -117,8 +126,10 @@ int parse(char buffer[])
     int flag=0;
     for(int i=0;i<3 ;i++)
     {
-        if (strcmp(buffer,comds[i])) flag=i;
-        break;
+        if (!strcmp(buffer,comds[i]))
+        {   flag=i;
+            break;
+        }
     }
     return flag;
 }
