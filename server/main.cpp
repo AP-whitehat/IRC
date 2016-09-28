@@ -19,7 +19,8 @@
 
 using namespace std;
 
-char comds[][10]={"/quit","/msg","/recieve","/join","/nick"}; 
+char comds[][10]={"/quit","/msg","/recieve","/join","/nick"};
+
 int servecli(int newsockfd,int c);
 int parse(char buffer[]);
 
@@ -37,40 +38,40 @@ struct data
 
 int main(int argc, char *argv[])
 {
-    /*
-     ifstream fin ("beads.in");
-     ofstream fout ("beads.out");
-     */
     int sockfd, newsockfd, portno,pid;
     socklen_t clilen;
-    //char buffer[256];
     sockaddr_in serv_addr, cli_addr;
-    //long n;
+    
     if (argc < 2) {
         cerr<<"ERROR, no port provided\n";
         exit(1);
     }
+    
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
         error("ERROR opening socket");
+    
     bzero((char *) &serv_addr, sizeof(serv_addr));
     portno = atoi(argv[1]);
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     serv_addr.sin_port = htons(portno);
     bind(sockfd, (sockaddr *) &serv_addr,sizeof(serv_addr));
-     //   error("ERROR on binding");
+    
     listen(sockfd,5);
     clilen = sizeof(cli_addr);
     int c=0;                        //keeps track of clients
-    while(c<2)
+    
+    while(1)
     {
         newsockfd = accept(sockfd,(sockaddr *) &cli_addr,&clilen);
         if(newsockfd<0)
             error("ERROR on accept");
+        
         pid = fork();                                   //fork a child process to accept multiple connections
         if(pid<0)
             error("ERROR on fork()");
+        
         if(pid==0)                         
         {
             close(sockfd);
@@ -79,7 +80,10 @@ int main(int argc, char *argv[])
             exit(0);
         }
         else
-        close(newsockfd);
+        {
+            close(newsockfd);
+            c++;
+        }
     }
     /*
      newsockfd = accept(sockfd,
@@ -111,36 +115,45 @@ int servecli(int newsockfd,int c)
         error("ERROR reading from socket");
     if(flag==1)                                    //read from 1st client
     {
-//        while(flag)
-//        {
-        ofstream fout ("msg.dat",ios::binary|ios::out);
+        ofstream fout ("msg.dat",ios::binary|ios::out|ios::app);
+        while(flag)
+        {
                 bzero(x.name,sizeof(x.name));
                 n=read(newsockfd,x.name,sizeof(x.name));
                 if (n < 0) error("ERROR reading from socket");
-        bzero(x.name,sizeof(x.name));
-        n=read(newsockfd,x.name,sizeof(x.name));
-        if (n < 0) error("ERROR reading from socket");
+            
                 bzero(x.a,sizeof(x.a));
                 n=read(newsockfd,x.a,sizeof(x.a));
                 if (n < 0) error("ERROR reading from socket");
-//        cerr<<"name :"<<x.name<<endl;
-//        cerr<<"message :"<<x.a;
+            
+//          cerr<<"name :"<<x.name<<endl;
+//          cerr<<"message :"<<x.a;
+            
                 close(newsockfd);
-        fout.write((char*)&x,sizeof(x));
+                fout.write((char*)&x,strlen(x));
+        }
         fout.close();
-                return 1;
-//        }
+        return 1;
     }
     else if (flag==2)                                              //writes the msg to second client
     {
         ifstream fin ("msg.dat",ios::binary|ios::in);
-        fin.read((char*)&x,sizeof(x));
-        fin.close();
-        n=write(newsockfd,x.name,sizeof(x.name));
-        if (n < 0) error("ERROR writing to socket");
-        n=write(newsockfd,x.a,sizeof(x.a));
-        if (n < 0) error("ERROR writing to socket");
+        while(1)
+        {
+            fin.read((char*)&x,sizeof(x));
+            
+            n=write(newsockfd,x.name,strlen(x.name));
+            if (n < 0) error("ERROR writing to socket");
+            
+            if(n==0)                                               //breaks when theres nothing on socket
+                break;
+            
+            n=write(newsockfd,x.a,strlen(x.a));
+            if (n < 0) error("ERROR writing to socket");
+
+        }
         close(newsockfd);
+        fin.close();
         return 1;
     }
     error("Client limit exceeded");                             //control shouldn't reach here

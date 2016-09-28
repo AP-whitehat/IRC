@@ -23,6 +23,7 @@ struct data
     char a[256],name[100];
     
 };
+
 int parse(char buffer[]);
 
 void error(const char *msg)
@@ -34,7 +35,6 @@ void error(const char *msg)
 int main(int argc, char *argv[])
 {
     int sockfd, portno;
-    //int n;
     char buffer[256];
     struct sockaddr_in serv_addr;
     struct hostent *server;
@@ -43,34 +43,41 @@ int main(int argc, char *argv[])
         cerr<<"usage "<<argv[0]<<" hostname port\n";
         exit(0);
     }
+    
     portno = atoi(argv[2]);
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    
     if (sockfd < 0)
         error("ERROR opening socket");
+    
     server = gethostbyname(argv[1]);
     if (server == NULL) {
         cerr<<"ERROR, no such host\n";
         exit(0);
     }
+    
     bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     bcopy((char *)server->h_addr,
           (char *)&serv_addr.sin_addr.s_addr,
           server->h_length);
     serv_addr.sin_port = htons(portno);
+    
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
         error("ERROR connecting");
+    
     int flag=1;                                                 //signals termination if 0
     data x;
+    
     cout<<"enter your nickname:";
-    fgets(x.name,sizeof(x.name),stdin);
+    scanf(" %[^\n\r]",x.name);
+   
     while(flag)
     {   int n;
         cout<<"Connected with server\n";
         bzero(buffer,256);
         cout<<"enter command:";
-//        fgets(buffer,255,stdin);                                 //fgets prevents overflow
-        cin>>buffer;
+        scanf(" %s",buffer);
         flag=parse(buffer);                                     //parses the msg and decides what to do
         switch(flag)
         {
@@ -79,8 +86,8 @@ int main(int argc, char *argv[])
                 if (n < 0)
                     error("ERROR writing to socket");
                 cout<<"enter your message :";
-                cin.ignore();
-                fgets(x.a,255,stdin);
+                scanf(" %[^/n/r]",x.a);
+                
 //                cerr<<"name :"<<x.name<<endl<<"msg:"<<x.a<<endl;
                 n = write(sockfd,x.name,sizeof(x.name));
                 if (n < 0)
