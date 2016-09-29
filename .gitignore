@@ -1,0 +1,9 @@
+*~
+*.xcworkspace
+*.xcodeproj
+cli2
+ser2
+.DS_Store
+msg.dat
+makefile
+

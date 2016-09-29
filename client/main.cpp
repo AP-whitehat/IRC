@@ -78,35 +78,41 @@ int main(int argc, char *argv[])
         bzero(buffer,256);
         cout<<"enter command:";
         scanf(" %s",buffer);
+        
+        n = write(sockfd,buffer,sizeof(buffer));        //sends the command to server
+        if (n < 0)
+            error("ERROR writing to socket");
+        
         flag=parse(buffer);                                     //parses the msg and decides what to do
+        
         switch(flag)
         {
             case 1:
-                n = write(sockfd,buffer,sizeof(buffer));        //sends the command to server "/msg"
-                if (n < 0)
-                    error("ERROR writing to socket");
                 cout<<"enter your message :";
                 scanf(" %[^/n/r]",x.a);
                 
 //                cerr<<"name :"<<x.name<<endl<<"msg:"<<x.a<<endl;
+                
                 n = write(sockfd,x.name,sizeof(x.name));
                 if (n < 0)
                     error("ERROR writing to socket");
+                
                 n = write(sockfd,x.a,sizeof(x.a));
                 if (n < 0)
                     error("ERROR writing to socket");
+                
                 break;
             case 2:
-                n = write(sockfd,buffer,sizeof(buffer));        //sends the command to server "/recieve"
-                if (n < 0)
                 bzero(x.name,sizeof(x.name));
                 n = read(sockfd,x.name,sizeof(x.name));
                 if (n < 0)
                     error("ERROR reading from socket");
+                
                 bzero(x.a,sizeof(x.a));
                 n = read(sockfd,x.a,sizeof(x.a));
                 if (n < 0)
                     error("ERROR reading from socket");
+                
                 cout<<"message from "<<x.name;
                 fputs(x.a,stdout);
                 break;
