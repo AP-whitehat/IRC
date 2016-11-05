@@ -2,4 +2,9 @@
 
 A simple IRC using TCP sockets .
 
-work in progress 
+<strike>work in progress </strike>
+<br>
+<b> : Depreciated : </b>
+
+I have moved my work to https://github.com/AP-whitehat/openMP-IRC .
+This project is abandoned .
